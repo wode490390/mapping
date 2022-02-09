@@ -21,4 +21,4 @@ struct BinaryStream : ReadOnlyBinaryStream {
 	}
 };
 
-static_assert(sizeof(BinaryStream) == 104);
+static_assert(sizeof(BinaryStream) == 96);

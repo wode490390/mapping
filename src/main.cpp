@@ -1,3 +1,4 @@
+#include <minecraft/BinaryDataOutput.h>
 #include <minecraft/BinaryStream.h>
 #include <minecraft/Block.h>
 #include <minecraft/BlockLegacy.h>
@@ -8,6 +9,7 @@
 #include <minecraft/Level.h>
 #include <minecraft/LevelSoundEventMap.h>
 #include <minecraft/Minecraft.h>
+#include <minecraft/NbtIo.h>
 #include <minecraft/ParticleTypeMap.h>
 #include <minecraft/ServerInstance.h>
 #include <minecraft/Biome.h>
@@ -113,15 +115,22 @@ static void generate_old_to_current_palette_map(ServerInstance *serverInstance) 
 	std::cout << "Generated " << std::to_string(generated) << " block state mapping tables" << std::endl;
 }
 
+extern "C" void _ZN16BinaryDataOutputC2ER12BinaryStream(BinaryDataOutput*, BinaryStream*);
+
 void generate_palette(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
 	unsigned int numStates = palette->getNumBlockRuntimeIds();
 	std::cout << "Number of blockstates: " << numStates << std::endl;
 
 	auto paletteStream = new BinaryStream();
+	BinaryDataOutput dataOutput;
+	_ZN16BinaryDataOutputC2ER12BinaryStream(&dataOutput, paletteStream);
+
+//	BinaryDataOutput dataOutput(*paletteStream);
 	for (unsigned int i = 0; i < numStates; i++) {
 		auto state = palette->getBlock(i);
-		paletteStream->writeType(state->tag);
+		NbtIo::write(&state->tag, dataOutput);
+//		paletteStream->writeType(state->tag);
 	}
 
 	std::ofstream paletteOutput("mapping_files/canonical_block_states.nbt");
@@ -252,13 +261,13 @@ static void generate_particle_mapping() {
 
 extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 	std::filesystem::create_directory("mapping_files");
-	generate_item_mapping();
-	generate_r12_to_current_block_map(serverInstance);
+	//generate_item_mapping();
+	//generate_r12_to_current_block_map(serverInstance);
 	generate_palette(serverInstance);
-	generate_biome_mapping(serverInstance);
+	/*generate_biome_mapping(serverInstance);
 	generate_level_sound_mapping();
 	generate_particle_mapping();
 	generate_hardness_table(serverInstance);
 
-	generate_old_to_current_palette_map(serverInstance);
+	generate_old_to_current_palette_map(serverInstance);*/
 }

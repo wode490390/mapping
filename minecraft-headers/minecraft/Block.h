@@ -17,6 +17,8 @@ struct Block {
 	unsigned short data;
 	BlockLegacy* blockLegacy;
 
-	char filler2[72];
+	char filler2[56];
 	BlockSerializationId tag;
 };
+
+static_assert(offsetof(Block, tag) == 80);
