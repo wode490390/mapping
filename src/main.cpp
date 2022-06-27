@@ -146,6 +146,28 @@ void generate_palette(ServerInstance *serverInstance) {
 	std::cout << "Generated block palette" << std::endl;
 }
 
+void generate_block_data_to_states_mapping_table(ServerInstance *serverInstance) {
+	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
+	unsigned int numStates = palette->getNumBlockRuntimeIds();
+
+	auto paletteStream = new BinaryStream();
+	for (unsigned int i = 0; i < numStates; i++) {
+		auto state = palette->getBlock(i);
+		auto name = state->getLegacyBlock().getFullName();
+
+		paletteStream->writeUnsignedVarInt(name.length());
+		paletteStream->write(name.c_str(), name.length());
+		paletteStream->writeUnsignedShort(state->data);
+		paletteStream->writeType(state->tag);
+	}
+
+	std::ofstream paletteOutput("mapping_files/block_data_to_states_table.bin");
+	paletteOutput << paletteStream->buffer;
+	paletteOutput.close();
+	delete paletteStream;
+	std::cout << "Generated current version's block data to states mapping (note: this may not be compatible with earlier versions!)" << std::endl;
+}
+
 static void generate_hardness_table(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
 	unsigned int numStates = palette->getNumBlockRuntimeIds();
@@ -335,4 +357,6 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 
 	generate_block_id_to_item_id_map(serverInstance);
 	generate_command_arg_types_table(serverInstance);
+
+	generate_block_data_to_states_mapping_table(serverInstance);
 }
