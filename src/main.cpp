@@ -153,12 +153,9 @@ void generate_block_data_to_states_mapping_table(ServerInstance *serverInstance)
 	auto paletteStream = new BinaryStream();
 	for (unsigned int i = 0; i < numStates; i++) {
 		auto state = palette->getBlock(i);
-		auto name = state->getLegacyBlock().getFullName();
 
-		paletteStream->writeUnsignedVarInt(name.length());
-		paletteStream->write(name.c_str(), name.length());
-		paletteStream->writeUnsignedShort(state->data);
 		paletteStream->writeType(state->tag);
+		paletteStream->writeUnsignedShort(state->data);
 	}
 
 	std::ofstream paletteOutput("mapping_files/block_data_to_states_table.bin");
