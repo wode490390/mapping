@@ -136,7 +136,10 @@ void generate_palette(ServerInstance *serverInstance) {
 	auto paletteStream = new BinaryStream();
 	for (unsigned int i = 0; i < numStates; i++) {
 		auto state = palette->getBlock(i);
-		paletteStream->writeType(state->tag);
+		CompoundTag out;
+		out.putCompound("block", state->tag.clone());
+		out.putShort("meta", state->data);
+		paletteStream->writeType(out);
 	}
 
 	std::ofstream paletteOutput("mapping_files/canonical_block_states.nbt");
