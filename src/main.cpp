@@ -136,10 +136,7 @@ void generate_palette(ServerInstance *serverInstance) {
 	auto paletteStream = new BinaryStream();
 	for (unsigned int i = 0; i < numStates; i++) {
 		auto state = palette->getBlock(i);
-		CompoundTag out;
-		out.putCompound("block", state->tag.clone());
-		out.putShort("meta", state->data);
-		paletteStream->writeType(out);
+		paletteStream->writeType(state->tag);
 	}
 
 	std::ofstream paletteOutput("mapping_files/canonical_block_states.nbt");
@@ -148,6 +145,24 @@ void generate_palette(ServerInstance *serverInstance) {
 	delete paletteStream;
 	std::cout << "Generated block palette" << std::endl;
 }
+
+static void generate_blockstate_meta_mapping(ServerInstance *serverInstance) {
+	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
+	unsigned int numStates = palette->getNumBlockRuntimeIds();
+
+	auto metaArray = nlohmann::json::array();
+
+	for(auto i = 0; i < numStates; i++){
+		auto state = palette->getBlock(i);
+		metaArray[i] = state->data;
+	}
+
+	std::ofstream out("mapping_files/block_state_meta_map.json");
+	out << std::setw(4) << metaArray << std::endl;
+	out.close();
+	std::cout << "Generated blockstate <-> meta mapping table" << std::endl;
+}
+
 
 static void generate_hardness_table(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
@@ -328,6 +343,7 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 	std::filesystem::create_directory("mapping_files");
 	generate_r12_to_current_block_map(serverInstance);
 	generate_palette(serverInstance);
+	generate_blockstate_meta_mapping(serverInstance);
 	generate_biome_mapping(serverInstance);
 	generate_level_sound_mapping();
 	generate_particle_mapping();
