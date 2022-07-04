@@ -278,11 +278,9 @@ static void generate_item_alias_mapping() {
 	map["simple"] = simple;
 	map["complex"] = complex;
 
-	std::ofstream result("mapping_files/item_id_alias_map.json");
+	std::ofstream result("mapping_files/r16_to_current_item_map.json");
 	result << std::setw(4) << map << std::endl;
 	result.close();
-
-	std::filesystem::copy_file("mapping_files/item_id_alias_map.json", "mapping_files/r16_to_current_item_map.json", std::filesystem::copy_options::overwrite_existing); //backwards compatibility
 
 	std::cout << "Generated legacy item alias mapping table" << std::endl;
 }
