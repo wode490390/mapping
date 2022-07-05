@@ -164,7 +164,7 @@ static void generate_blockstate_meta_mapping(ServerInstance *serverInstance) {
 }
 
 
-static void generate_hardness_table(ServerInstance *serverInstance) {
+static void generate_block_properties_table(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
 	unsigned int numStates = palette->getNumBlockRuntimeIds();
 
@@ -172,11 +172,20 @@ static void generate_hardness_table(ServerInstance *serverInstance) {
 
 	BlockTypeRegistry::forEachBlock([&table] (const BlockLegacy & blockLegacy)->bool {
 		auto name = blockLegacy.getFullName();
-		table[name] = blockLegacy.getDestroySpeed();
+		auto data = nlohmann::json::object();
+		data["hardness"] = blockLegacy.getDestroySpeed();
+		data["mHardness"] = blockLegacy.hardness;
+		data["blastResistance"] = blockLegacy.blastResistance;
+		data["friction"] = blockLegacy.friction;
+		data["flammability"] = blockLegacy.flammability;
+		data["flameEncouragement"] = blockLegacy.flameEncouragement;
+		data["opacity"] = blockLegacy.opacity;
+		data["brightness"] = blockLegacy.brightness;
+		table[name] = data;
 		return true;
 	});
 
-	std::ofstream output("mapping_files/hardness_table.json");
+	std::ofstream output("mapping_files/block_properties_table.json");
 	output << std::setw(4) << table << std::endl;
 	output.close();
 	std::cout << "Generated hardness table" << std::endl;
@@ -345,7 +354,7 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 	generate_biome_mapping(serverInstance);
 	generate_level_sound_mapping();
 	generate_particle_mapping();
-	generate_hardness_table(serverInstance);
+	generate_block_properties_table(serverInstance);
 
 	generate_old_to_current_palette_map(serverInstance);
 	generate_item_alias_mapping();
