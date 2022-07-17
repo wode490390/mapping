@@ -346,8 +346,105 @@ static void generate_command_arg_types_table(ServerInstance *serverInstance) {
 	std::cout << "Generated command parameter ID mapping table" << std::endl;
 }
 
+static void generate_item_legacy_id_to_name_mapping() {
+    auto map = nlohmann::json::object();
+
+    for (auto& pair : ItemRegistry::mLegacyIDToNameMap) {
+        map[std::to_string(pair.first)] = add_prefix_if_necessary(pair.second.str);
+    }
+
+    std::ofstream result("mapping_files/item_legacy_id_to_name.json");
+    result << std::setw(4) << map << std::endl;
+    result.close();
+
+    std::cout << "Generated item legacy id to name mapping table" << std::endl;
+}
+
+static void generate_item_properties_table() {
+    auto table = nlohmann::json::array();
+
+    unsigned int i = 0;
+    for (auto& item : ItemRegistry::mItemRegistry) {
+        auto data = nlohmann::json::object();
+
+        data["identifier"] = item->getFullItemName();
+        data["canBeDepleted"] = item->canBeDepleted();
+        data["isDamageable"] = item->isDamageable();
+        data["isExplodable"] = item->isExplodable();
+        data["isFireResistant"] = item->isFireResistant();
+        data["isHandEquipped"] = item->isHandEquipped();
+        data["isSeed"] = item->isSeed();
+        data["isStackedByData"] = item->isStackedByData();
+        data["cooldownTime"] = item->getCooldownTime();
+        data["runtimeId"] = item->getId();
+        data["maxDamage"] = item->getMaxDamage();
+
+        table[i++] = data;
+    }
+
+    std::ofstream result("mapping_files/item_properties_table.json");
+    result << std::setw(4) << table << std::endl;
+    result.close();
+
+    std::cout << "Generated item properties table" << std::endl;
+}
+
+static void generate_block_properties_table2(ServerInstance *serverInstance) {
+    auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
+    unsigned int numStates = palette->getNumBlockRuntimeIds();
+
+    auto table = nlohmann::json::array();
+
+    unsigned int i = 0;
+    BlockTypeRegistry::forEachBlock([&table, &i] (const BlockLegacy & blockLegacy)->bool {
+        auto data = nlohmann::json::object();
+
+        data["identifier"] = blockLegacy.getFullName();
+        data["hardness"] = blockLegacy.getDestroySpeed();
+        data["mHardness"] = blockLegacy.hardness;
+        data["blastResistance"] = blockLegacy.blastResistance;
+        data["friction"] = blockLegacy.friction;
+        data["flammability"] = blockLegacy.flammability;
+        data["flameEncouragement"] = blockLegacy.flameEncouragement;
+        data["opacity"] = blockLegacy.opacity;
+        data["brightness"] = blockLegacy.brightness;
+
+        data["canBeOriginalSurface"] = blockLegacy.canBeOriginalSurface();
+        data["canContainLiquid"] = blockLegacy.canContainLiquid();
+        data["canHurtAndBreakItem"] = blockLegacy.canHurtAndBreakItem();
+        data["canInstatick"] = blockLegacy.canInstatick();
+        data["isHeavy"] = blockLegacy.isHeavy();
+        data["isMotionBlockingBlock"] = blockLegacy.isMotionBlockingBlock();
+        data["isSolid"] = blockLegacy.isSolid();
+        data["isSolidBlockingBlock"] = blockLegacy.isSolidBlockingBlock();
+        data["isStandingSign"] = blockLegacy.isStandingSign();
+        data["isUnbreakable"] = blockLegacy.isUnbreakable();
+        data["isVanilla"] = blockLegacy.isVanilla();
+        data["isWaterBlocking"] = blockLegacy.isWaterBlocking();
+        data["hasBlockEntity"] = blockLegacy.hasBlockEntity();
+        data["creativeCategory"] = blockLegacy.getCreativeCategory();
+        data["blockEntityType"] = blockLegacy.getBlockEntityType();
+        data["blockItemId"] = blockLegacy.getBlockItemId();
+        data["burnOdds"] = blockLegacy.getBurnOdds();
+        data["renderLayer"] = blockLegacy.getRenderLayer();
+        data["thickness"] = blockLegacy.getThickness();
+
+        table[i++] = data;
+        return true;
+    });
+
+    std::ofstream output("mapping_files/block_properties_table2.json");
+    output << std::setw(4) << table << std::endl;
+    output.close();
+    std::cout << "Generated block properties table II" << std::endl;
+}
+
+#define GENERATE_ALL_DATA 1
+
 extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 	std::filesystem::create_directory("mapping_files");
+
+#if GENERATE_ALL_DATA
 	generate_r12_to_current_block_map(serverInstance);
 	generate_palette(serverInstance);
 	generate_blockstate_meta_mapping(serverInstance);
@@ -361,4 +458,9 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 
 	generate_block_id_to_item_id_map(serverInstance);
 	generate_command_arg_types_table(serverInstance);
+#endif
+
+    generate_item_legacy_id_to_name_mapping();
+    generate_item_properties_table();
+    generate_block_properties_table2(serverInstance);
 }
