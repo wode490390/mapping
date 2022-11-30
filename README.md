@@ -4,7 +4,11 @@ This is a BDS (Bedrock Dedicated Server) mod which allows generating mappings an
 This includes (but is not limited to) the current block palette for a given version, blockstate upgrade tables from previous versions, item upgrade tables, and more besides.
 
 ## Usage
-Set up a BDS using [modloader-helper](https://github.com/Frago9876543210/modloader-helper).
+### Using bds-modding-devkit
+[bds-modding-devkit](https://github.com/pmmp/bds-modding-devkit) is the simplest way to use this mod. See instructions on its README.
+
+### Using the old way
+If you don't like or don't want to use bds-modding-devkit, set up a BDS using [modloader-helper](https://github.com/Frago9876543210/modloader-helper).
 Once you've done this, clone this repository into the `code` subdirectory, run `helper.sh build mapping`
 Then, run the server using the `run.sh` script. The output files will be produced on server start.
 
