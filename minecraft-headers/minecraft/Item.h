@@ -22,5 +22,6 @@ struct Item {
     HashedString getCooldownType()const;
     short getId()const;
     short getMaxDamage()const;
+    int getCreativeCategory()const;
 
 };

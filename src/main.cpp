@@ -363,6 +363,26 @@ static void generate_item_legacy_id_to_name_mapping() {
     std::cout << "Generated item legacy id to name mapping table" << std::endl;
 }
 
+static void generate_item_runtime_id_to_name_mapping() {
+    auto map = nlohmann::json::object();
+    auto map2 = nlohmann::json::object();
+
+    for (auto& pair : ItemRegistry::mIdToItemMap) {
+        map[std::to_string(pair.first)] = add_prefix_if_necessary(pair.second->getFullItemName());
+        map2[add_prefix_if_necessary(pair.second->getFullItemName())] = pair.first;
+    }
+
+    std::ofstream result("mapping_files/item_runtime_id_to_name.json");
+    result << std::setw(4) << map << std::endl;
+    result.close();
+
+    std::ofstream result2("mapping_files/item_name_to_runtime_id.json");
+    result2 << std::setw(4) << map2 << std::endl;
+    result2.close();
+
+    std::cout << "Generated item runtime id to name mapping table" << std::endl;
+}
+
 static void generate_item_properties_table() {
     auto table = nlohmann::json::array();
 
@@ -381,6 +401,7 @@ static void generate_item_properties_table() {
         data["cooldownTime"] = item->getCooldownTime();
         data["runtimeId"] = item->getId();
         data["maxDamage"] = item->getMaxDamage();
+        data["creativeCategory"] = item->getCreativeCategory();
 
         table[i++] = data;
     }
@@ -409,6 +430,7 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
         data["friction"] = blockLegacy.friction;
         data["flammability"] = blockLegacy.flammability;
         data["flameEncouragement"] = blockLegacy.flameEncouragement;
+        data["lavaFlammable"] = blockLegacy.lavaFlammable;
         data["opacity"] = blockLegacy.opacity;
         data["brightness"] = blockLegacy.brightness;
 
@@ -417,18 +439,19 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
         data["canHurtAndBreakItem"] = blockLegacy.canHurtAndBreakItem();
         data["canInstatick"] = blockLegacy.canInstatick();
         data["isHeavy"] = blockLegacy.isHeavy();
+        data["isLavaFlammable"] = blockLegacy.isLavaFlammable();
         data["isMotionBlockingBlock"] = blockLegacy.isMotionBlockingBlock();
         data["isSolid"] = blockLegacy.isSolid();
         data["isSolidBlockingBlock"] = blockLegacy.isSolidBlockingBlock();
-        data["isStandingSign"] = blockLegacy.isStandingSign();
-        data["isUnbreakable"] = blockLegacy.isUnbreakable();
         data["isVanilla"] = blockLegacy.isVanilla();
         data["isWaterBlocking"] = blockLegacy.isWaterBlocking();
         data["hasBlockEntity"] = blockLegacy.hasBlockEntity();
+        data["shouldRandomTick"] = blockLegacy.shouldRandomTick();
         data["creativeCategory"] = blockLegacy.getCreativeCategory();
         data["blockEntityType"] = blockLegacy.getBlockEntityType();
         data["blockItemId"] = blockLegacy.getBlockItemId();
         data["burnOdds"] = blockLegacy.getBurnOdds();
+        data["flameOdds"] = blockLegacy.getFlameOdds();
         data["renderLayer"] = blockLegacy.getRenderLayer();
         data["thickness"] = blockLegacy.getThickness();
 
@@ -464,6 +487,7 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 #endif
 
     generate_item_legacy_id_to_name_mapping();
+    generate_item_runtime_id_to_name_mapping();
     generate_item_properties_table();
     generate_block_properties_table2(serverInstance);
 }

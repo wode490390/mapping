@@ -24,6 +24,7 @@ struct BlockLegacy {
 	int flameEncouragement;
 	int flammability;
 	bool lavaFlammable;
+    char padding3[4];
 	float hardness;
 	float blastResistance;
 	char padding2[16];
@@ -44,20 +45,22 @@ struct BlockLegacy {
     bool canContainLiquid()const;
     bool canHurtAndBreakItem()const;
     bool canInstatick()const;
+    bool isAir()const;
     bool isEmpty()const;
     bool isHeavy()const;
+    bool isLavaFlammable()const;
     bool isMotionBlockingBlock()const;
     bool isSolid()const;
     bool isSolidBlockingBlock()const;
-    bool isStandingSign()const;
-    bool isUnbreakable()const;
     bool isVanilla()const;
     bool isWaterBlocking()const;
     bool hasBlockEntity()const;
+    bool shouldRandomTick()const;
     int getCreativeCategory()const;
     int getBlockEntityType()const;
     short getBlockItemId()const;
     int getBurnOdds()const;
+    int getFlameOdds()const;
     int getRenderLayer()const;
     float getThickness()const;
 
