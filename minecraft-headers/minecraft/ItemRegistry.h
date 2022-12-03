@@ -21,5 +21,4 @@ struct ItemRegistry{
 
 	static std::pair<HashedString, int> getNameFromAlias(HashedString const & name, int metadata);
 
-	static WeakPtr<Item> getItem(const Block &);
 };

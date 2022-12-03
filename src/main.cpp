@@ -5,6 +5,7 @@
 #include <minecraft/BlockTypeRegistry.h>
 #include <minecraft/CompoundTag.h>
 #include <minecraft/Item.h>
+#include <minecraft/ItemDescriptor.h>
 #include <minecraft/ItemRegistry.h>
 #include <minecraft/Level.h>
 #include <minecraft/LevelSoundEventMap.h>
@@ -198,7 +199,7 @@ void generate_biome_mapping(ServerInstance *server) {
 
 	registry->forEachBiome([&map] (Biome &biome) {
 		auto id = biome.biomeId;
-		map[biome.name] = id;
+		map[biome.name.str] = id;
 	});
 
 	std::ofstream result("mapping_files/biome_id_map.json");
@@ -301,8 +302,10 @@ static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 
 	for (unsigned int i = 0; i < numStates; i++) {
 		auto state = palette->getBlock(i);
-		WeakPtr<Item> weakItem = ItemRegistry::getItem(*state);
-		Item *item = weakItem.get();
+		auto descriptor = new ItemDescriptor(*state);
+
+		const Item *item = descriptor->getItem();
+		delete descriptor;
 		if (item == nullptr) {
 			std::cout << "null item ??? " << state->getLegacyBlock().getFullName() << std::endl;
 			continue;

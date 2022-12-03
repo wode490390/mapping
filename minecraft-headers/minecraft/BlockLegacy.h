@@ -23,6 +23,7 @@ struct BlockLegacy {
 	char brightness;
 	int flameEncouragement;
 	int flammability;
+	bool lavaFlammable;
 	float hardness;
 	float blastResistance;
 	char padding2[16];
@@ -61,3 +62,5 @@ struct BlockLegacy {
     float getThickness()const;
 
 };
+
+static_assert(offsetof(BlockLegacy, opacity) == 289);
