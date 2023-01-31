@@ -254,10 +254,12 @@ static std::string add_prefix_if_necessary(std::string input) {
 	return "minecraft:" + input;
 }
 
-static void generate_item_alias_mapping() {
+static void generate_item_alias_mapping(ServerInstance *serverInstance) {
 	auto simple = nlohmann::json::object();
 
-	for(auto pair : ItemRegistry::mItemAliasLookupMap) {
+	auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
+	assert(itemRegistry != nullptr);
+	for(auto pair : itemRegistry->mItemAliasLookupMap) {
 		auto prefixed = add_prefix_if_necessary(pair.second.alias.str);
 		if (prefixed != pair.first.str) {
 			simple[pair.first.str] = prefixed;
@@ -266,7 +268,7 @@ static void generate_item_alias_mapping() {
 
 	auto complex = nlohmann::json::object();
 
-	for(auto pair : ItemRegistry::mComplexAliasLookupMap) {
+	for(auto pair : itemRegistry->mComplexAliasLookupMap) {
 		auto metaMap = nlohmann::json::object();
 
 		auto func = pair.second;
@@ -298,6 +300,12 @@ static void generate_item_alias_mapping() {
 static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 	auto map = nlohmann::json::object();
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
+
+	auto oldItemRegistryRef = ItemRegistryManager::getItemRegistry();
+	auto itemRegistryRef = serverInstance->getMinecraft()->getLevel()->getItemRegistry();
+
+	ItemRegistryManager::setItemRegistry(itemRegistryRef);
+
 	unsigned int numStates = palette->getNumBlockRuntimeIds();
 
 	for (unsigned int i = 0; i < numStates; i++) {
@@ -319,6 +327,8 @@ static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 	result << std::setw(4) << map << std::endl;
 	result.close();
 
+	ItemRegistryManager::resetItemRegistry();
+	ItemRegistryManager::setItemRegistry(oldItemRegistryRef);
 	std::cout << "Generated BlockID to ItemID mapping table" << std::endl;
 }
 
@@ -349,9 +359,11 @@ static void generate_command_arg_types_table(ServerInstance *serverInstance) {
 	std::cout << "Generated command parameter ID mapping table" << std::endl;
 }
 
-static void generate_item_tags() {
+static void generate_item_tags(ServerInstance *serverInstance) {
 	auto tags = nlohmann::json::object();
-	for (const auto &pair: ItemRegistry::mTagToItemsMap) {
+	auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
+
+	for (const auto &pair: itemRegistry->mTagToItemsMap) {
 		auto items = nlohmann::json::array();
 		for (const auto &item: pair.second) {
 			items.push_back(item->getFullItemName());
@@ -378,8 +390,8 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 
 	generate_old_to_current_palette_map(serverInstance);
 
-	generate_item_alias_mapping();
-	generate_item_tags();
+	generate_item_alias_mapping(serverInstance);
+	generate_item_tags(serverInstance);
 
 	generate_block_id_to_item_id_map(serverInstance);
 	generate_command_arg_types_table(serverInstance);

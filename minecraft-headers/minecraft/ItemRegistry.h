@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -8,19 +9,40 @@
 #include "Memory.h"
 #include "ItemTag.h"
 
-struct ItemRegistry{
-	static std::vector<SharedPtr<Item>> mItemRegistry;
 
+struct ItemRegistry : std::enable_shared_from_this<ItemRegistry>{
 	struct ItemAlias{
 		HashedString alias;
 		char padding[120];
 	};
 
-	static std::unordered_map<HashedString, ItemAlias> mItemAliasLookupMap;
-	static std::unordered_map<HashedString, std::function<HashedString(short)>> mComplexAliasLookupMap;
+	struct ItemHashAlias {
+		uint64_t aliasName;
+		char padding[120]; //BaseGameVersion crap
+	};
 
-	static std::unordered_map<ItemTag, std::unordered_set<Item const *>> mTagToItemsMap;
+	std::vector<SharedPtr<Item>> mItemRegistry;
 
-	static std::pair<HashedString, int> getNameFromAlias(HashedString const & name, int metadata);
+	std::unordered_map<int, WeakPtr<Item>> mIdToItemMap;
+	std::unordered_map<HashedString, WeakPtr<Item>> mNameToItemMap;
+	std::unordered_map<HashedString, WeakPtr<Item>> mTileNamespaceToItemMap;
+	std::unordered_map<HashedString, WeakPtr<Item>> mTileItemNameToItemMap;
+	std::unordered_map<HashedString, ItemRegistry::ItemAlias> mItemAliasLookupMap;
+	std::unordered_map<unsigned long, ItemRegistry::ItemHashAlias> mReverseAliasLookupMap;
+	std::unordered_map<unsigned long, ItemRegistry::ItemHashAlias> mReverseFullNameAliasLookupMap;
+	std::unordered_map<HashedString, std::function<HashedString (short)>> mComplexAliasLookupMap;
+	std::unordered_map<short, HashedString> mLegacyIDToNameMap;
+	short mMaxItemID;
+	std::vector<HashedString> mAttachableDefinitions;
+	std::unordered_map<ItemTag, std::unordered_set<Item const*>> mTagToItemsMap;
+};
 
+struct ItemRegistryRef{
+	std::weak_ptr<ItemRegistry> mWeakRegistry;
+};
+
+struct ItemRegistryManager {
+	static void setItemRegistry(const ItemRegistryRef);
+	static void resetItemRegistry(void);
+	static ItemRegistryRef getItemRegistry(void);
 };
