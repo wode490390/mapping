@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <set>
 #include <json.hpp>
 
 
@@ -360,19 +361,20 @@ static void generate_command_arg_types_table(ServerInstance *serverInstance) {
 }
 
 static void generate_item_tags(ServerInstance *serverInstance) {
-	auto tags = nlohmann::json::object();
+	std::map<std::string, std::set<std::string>> tags;
 	auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
 
 	for (const auto &pair: itemRegistry->mTagToItemsMap) {
-		auto items = nlohmann::json::array();
+		std::set<std::string> items;
 		for (const auto &item: pair.second) {
-			items.push_back(item->getFullItemName());
+			items.insert(item->getFullItemName());
 		}
 		tags[pair.first.str] = items;
 	}
 
+	nlohmann::json json = tags;
 	std::ofstream result("mapping_files/item_tags.json");
-	result << std::setw(4) << tags << std::endl;
+	result << std::setw(4) << json << std::endl;
 	result.close();
 
 	std::cout << "Generated item tags!" << std::endl;
