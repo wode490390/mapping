@@ -17,7 +17,7 @@ Input files should be placed in `input_files`. The following files are used by t
 
 | File name | Description |
 |:----------|:------------|
-| `r12_block_states.json` | JSON table of 1.12 block states as seen [here](https://github.com/pmmp/BedrockData/blob/bd75689119b20b13671d1ab73a91c177451b3082/r12_block_states.json). Used to generate `r12_to_current_block_map.bin`. |
+| `r12_block_states.json` | JSON table of 1.12 block states as seen [here](https://github.com/pmmp/bds-modding-devkit/blob/122a2737663e2de6732de500586829ed378c0f85/input_files/r12_block_states.json). Used to generate `r12_to_current_block_map.bin`. |
 | `old_palettes/*.nbt` | Old blockstate tables in the same format as seen [here](https://github.com/pmmp/BedrockData/blob/master/canonical_block_states.nbt). Used to generate blockstate mapping tables of old blockstates -> current version. |
 
 ## Output files
