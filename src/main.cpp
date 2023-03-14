@@ -42,22 +42,16 @@ void generate_r12_to_current_block_map(ServerInstance *serverInstance) {
 
 	for (auto &object : json["minecraft"].items()) {
 		const auto &name = "minecraft:" + object.key();
-		auto blockLegacy = BlockTypeRegistry::lookupByName(name, false).get();
-		if (blockLegacy == nullptr){
-			std::cerr << "No matching blockstate found for " << name << " (THIS IS A BUG)" << std::endl;
-			continue;
-		}
 
 		for (auto &it : object.value()) {
 			auto state = it.get<unsigned short>();
-
 			if (name == "minecraft:cocoa" && state >= 12) {
 				continue;
 			}
 
-			auto block = blockLegacy->getStateFromLegacyData(state);
-			if (block == nullptr) {
-				std::cerr << "No mapped state for " << name << ":" << std::to_string(state) << " (THIS IS A BUG)" << std::endl;
+			auto block = BlockTypeRegistry::lookupByName(name, state, false);
+			if (block == nullptr){
+				std::cerr << "No matching blockstate found for " << name << " (THIS IS A BUG)" << std::endl;
 				continue;
 			}
 
