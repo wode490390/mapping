@@ -126,7 +126,7 @@ static void generate_old_to_current_palette_map(ServerInstance *serverInstance) 
 
 void generate_palette(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 	std::cout << "Number of blockstates: " << numStates << std::endl;
 
 	auto paletteStream = new BinaryStream();
@@ -144,7 +144,7 @@ void generate_palette(ServerInstance *serverInstance) {
 
 static void generate_blockstate_meta_mapping(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 
 	auto metaArray = nlohmann::json::array();
 
@@ -162,7 +162,7 @@ static void generate_blockstate_meta_mapping(ServerInstance *serverInstance) {
 
 static void generate_block_properties_table(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 
 	auto table = nlohmann::json::object();
 
@@ -301,7 +301,7 @@ static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 
 	ItemRegistryManager::setItemRegistry(itemRegistryRef);
 
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 
 	for (unsigned int i = 0; i < numStates; i++) {
 		auto state = palette->getBlock(i);

@@ -10,5 +10,5 @@ struct BlockPalette {
 	const Block *getBlock(BlockSerializationId const &) const;
 	const Block *getBlock(const unsigned int & blockRuntimeId) const;
 
-	size_t getNumBlockRuntimeIds() const;
+	size_t getNumBlockNetworkIds() const;
 };
