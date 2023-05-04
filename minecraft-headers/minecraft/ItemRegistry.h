@@ -8,6 +8,7 @@
 #include "HashedString.h"
 #include "Memory.h"
 #include "ItemTag.h"
+#include "Item.h"
 
 
 struct ItemRegistry : std::enable_shared_from_this<ItemRegistry>{

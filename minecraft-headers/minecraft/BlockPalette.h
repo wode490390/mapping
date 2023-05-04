@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Block.h"
+#include "BlockLegacy.h"
 
 struct BlockPalette {
 	BlockLegacy *getBlockLegacy(std::string const &) const;
