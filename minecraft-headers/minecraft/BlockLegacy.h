@@ -17,7 +17,7 @@ struct BlockLegacy {
 	std::string namespaceName;
 	HashedString fullName;
 
-	char padding[120];
+	char padding[172];
 	char unknown;
 	char opacity;
 	char brightness;
@@ -42,4 +42,4 @@ struct BlockLegacy {
 
 };
 
-static_assert(offsetof(BlockLegacy, opacity) == 289);
+static_assert(offsetof(BlockLegacy, opacity) == 341);
