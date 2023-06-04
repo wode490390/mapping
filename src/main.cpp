@@ -179,9 +179,9 @@ static void generate_block_properties_table(ServerInstance *serverInstance) {
 		data["blastResistance"] = blockLegacy.blastResistance;
 		data["friction"] = blockLegacy.friction;
 		data["flammability"] = blockLegacy.flammability;
-		data["flameEncouragement"] = blockLegacy.flameEncouragement;
-		data["opacity"] = blockLegacy.opacity;
-		data["brightness"] = blockLegacy.brightness;
+//		data["flameEncouragement"] = blockLegacy.flameEncouragement;
+//		data["opacity"] = blockLegacy.opacity;
+//		data["brightness"] = blockLegacy.brightness;
 		table[name] = data;
 		return true;
 	});
@@ -425,14 +425,14 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
 
         data["identifier"] = blockLegacy.getFullName();
         data["hardness"] = blockLegacy.getDestroySpeed();
-        data["mHardness"] = blockLegacy.hardness;
-        data["blastResistance"] = blockLegacy.blastResistance;
-        data["friction"] = blockLegacy.friction;
-        data["flammability"] = blockLegacy.flammability;
-        data["flameEncouragement"] = blockLegacy.flameEncouragement;
-        data["lavaFlammable"] = blockLegacy.lavaFlammable;
-        data["opacity"] = blockLegacy.opacity;
-        data["brightness"] = blockLegacy.brightness;
+        data["_mDestroySpeed"] = blockLegacy.hardness;
+        data["_mExplosionResistance"] = blockLegacy.blastResistance;
+        data["_mFriction"] = blockLegacy.friction;
+        data["_mFlameOdds"] = blockLegacy.flammability;
+//        data["_flameEncouragement"] = blockLegacy.flameEncouragement;
+        data["_isLavaFlammable"] = blockLegacy.lavaFlammable;
+//        data["_opacity"] = blockLegacy.opacity;
+//        data["_brightness"] = blockLegacy.brightness;
 
         data["canBeOriginalSurface"] = blockLegacy.canBeOriginalSurface();
         data["canContainLiquid"] = blockLegacy.canContainLiquid();
@@ -454,6 +454,21 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
         data["flameOdds"] = blockLegacy.getFlameOdds();
         data["renderLayer"] = blockLegacy.getRenderLayer();
         data["thickness"] = blockLegacy.getThickness();
+
+        data["_unknown560_288"] = blockLegacy.unknown560_288;
+        data["_isWater"] = blockLegacy.isWater;
+        data["_isPumpkin"] = blockLegacy.isPumpkin;
+        data["_notLava"] = blockLegacy.notLava;
+        data["_unused560_292"] = blockLegacy.unused560_292;
+        data["_mBurnOdds"] = blockLegacy.mBurnOdds;
+        data["_mLightBlock"] = blockLegacy.mLightBlock;
+        data["_mLightEmission"] = blockLegacy.mLightEmission;
+        data["_mMapColor0-R"] = blockLegacy.mMapColor.r;
+        data["_mMapColor1-G"] = blockLegacy.mMapColor.g;
+        data["_mMapColor2-B"] = blockLegacy.mMapColor.b;
+        data["_mMapColor3-A"] = blockLegacy.mMapColor.a;
+        data["_unknown560_336"] = blockLegacy.unknown560_336;
+        data["_id"] = blockLegacy.id;
 
         table[i++] = data;
         return true;

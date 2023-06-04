@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HashedString.h"
+#include "Color.h"
 
 struct Block;
 
@@ -18,17 +19,22 @@ struct BlockLegacy {
 	HashedString fullName;
 
 	char padding[120];
-	char unknown;
-	char opacity;
-	char brightness;
-	int flameEncouragement;
+	char unknown560_288;
+	char isWater;
+    char isPumpkin;
+    char notLava;
+    char unused560_292;
+    char mLightBlock;
+    char mLightEmission;
 	int flammability;
+    int mBurnOdds;
 	bool lavaFlammable;
-    char padding3[4];
 	float hardness;
 	float blastResistance;
-	char padding2[16];
+    Color mMapColor;
 	float friction;
+    int unknown560_336;
+    int id;
 
 	Block *getStateFromLegacyData(unsigned short) const;
 	const NewBlockID getBlockID() const;
@@ -41,6 +47,7 @@ struct BlockLegacy {
 
 	virtual ~BlockLegacy();
 
+    Block *getRenderBlock()const;
     bool canBeOriginalSurface()const;
     bool canContainLiquid()const;
     bool canHurtAndBreakItem()const;
@@ -66,4 +73,4 @@ struct BlockLegacy {
 
 };
 
-static_assert(offsetof(BlockLegacy, opacity) == 289);
+static_assert(offsetof(BlockLegacy, isWater) == 289);
