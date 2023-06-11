@@ -18,7 +18,7 @@ struct BlockLegacy {
 	std::string namespaceName;
 	HashedString fullName;
 
-	char padding[120];
+	char padding[172];
 	char unknown560_288;
 	char isWater;
     char isPumpkin;
@@ -73,4 +73,4 @@ struct BlockLegacy {
 
 };
 
-static_assert(offsetof(BlockLegacy, isWater) == 289);
+static_assert(offsetof(BlockLegacy, isWater) == 341);

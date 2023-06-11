@@ -6,4 +6,5 @@ struct BiomeRegistry;
 struct Level {
 	BlockPalette *getBlockPalette() const;
 	BiomeRegistry *getBiomeRegistry() const;
+	ItemRegistryRef getItemRegistry() const;
 };

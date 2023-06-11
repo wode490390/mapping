@@ -11,6 +11,7 @@
 #include <minecraft/LevelSoundEventMap.h>
 #include <minecraft/Memory.h>
 #include <minecraft/Minecraft.h>
+#include <minecraft/NoteBlock.h>
 #include <minecraft/ParticleTypeMap.h>
 #include <minecraft/ServerInstance.h>
 #include <minecraft/VanillaBlockConversion.h>
@@ -21,6 +22,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <set>
 #include <json.hpp>
 
 
@@ -41,22 +43,16 @@ void generate_r12_to_current_block_map(ServerInstance *serverInstance) {
 
 	for (auto &object : json["minecraft"].items()) {
 		const auto &name = "minecraft:" + object.key();
-		auto blockLegacy = BlockTypeRegistry::lookupByName(name, false).get();
-		if (blockLegacy == nullptr){
-			std::cerr << "No matching blockstate found for " << name << " (THIS IS A BUG)" << std::endl;
-			continue;
-		}
 
 		for (auto &it : object.value()) {
 			auto state = it.get<unsigned short>();
-
 			if (name == "minecraft:cocoa" && state >= 12) {
 				continue;
 			}
 
-			auto block = blockLegacy->getStateFromLegacyData(state);
-			if (block == nullptr) {
-				std::cerr << "No mapped state for " << name << ":" << std::to_string(state) << " (THIS IS A BUG)" << std::endl;
+			auto block = BlockTypeRegistry::lookupByName(name, state, false);
+			if (block == nullptr){
+				std::cerr << "No matching blockstate found for " << name << " (THIS IS A BUG)" << std::endl;
 				continue;
 			}
 
@@ -131,7 +127,7 @@ static void generate_old_to_current_palette_map(ServerInstance *serverInstance) 
 
 void generate_palette(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 	std::cout << "Number of blockstates: " << numStates << std::endl;
 
 	auto paletteStream = new BinaryStream();
@@ -149,7 +145,7 @@ void generate_palette(ServerInstance *serverInstance) {
 
 static void generate_blockstate_meta_mapping(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 
 	auto metaArray = nlohmann::json::array();
 
@@ -167,7 +163,7 @@ static void generate_blockstate_meta_mapping(ServerInstance *serverInstance) {
 
 static void generate_block_properties_table(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 
 	auto table = nlohmann::json::object();
 
@@ -254,10 +250,12 @@ static std::string add_prefix_if_necessary(std::string input) {
 	return "minecraft:" + input;
 }
 
-static void generate_item_alias_mapping() {
+static void generate_item_alias_mapping(ServerInstance *serverInstance) {
 	auto simple = nlohmann::json::object();
 
-	for(auto pair : ItemRegistry::mItemAliasLookupMap) {
+	auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
+	assert(itemRegistry != nullptr);
+	for(auto pair : itemRegistry->mItemAliasLookupMap) {
 		auto prefixed = add_prefix_if_necessary(pair.second.alias.str);
 		if (prefixed != pair.first.str) {
 			simple[pair.first.str] = prefixed;
@@ -266,7 +264,7 @@ static void generate_item_alias_mapping() {
 
 	auto complex = nlohmann::json::object();
 
-	for(auto pair : ItemRegistry::mComplexAliasLookupMap) {
+	for(auto pair : itemRegistry->mComplexAliasLookupMap) {
 		auto metaMap = nlohmann::json::object();
 
 		auto func = pair.second;
@@ -298,7 +296,13 @@ static void generate_item_alias_mapping() {
 static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 	auto map = nlohmann::json::object();
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-	unsigned int numStates = palette->getNumBlockRuntimeIds();
+
+	auto oldItemRegistryRef = ItemRegistryManager::getItemRegistry();
+	auto itemRegistryRef = serverInstance->getMinecraft()->getLevel()->getItemRegistry();
+
+	ItemRegistryManager::setItemRegistry(itemRegistryRef);
+
+	unsigned int numStates = palette->getNumBlockNetworkIds();
 
 	for (unsigned int i = 0; i < numStates; i++) {
 		auto state = palette->getBlock(i);
@@ -319,6 +323,8 @@ static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 	result << std::setw(4) << map << std::endl;
 	result.close();
 
+	ItemRegistryManager::resetItemRegistry();
+	ItemRegistryManager::setItemRegistry(oldItemRegistryRef);
 	std::cout << "Generated BlockID to ItemID mapping table" << std::endl;
 }
 
@@ -349,10 +355,48 @@ static void generate_command_arg_types_table(ServerInstance *serverInstance) {
 	std::cout << "Generated command parameter ID mapping table" << std::endl;
 }
 
-static void generate_item_legacy_id_to_name_mapping() {
+static void generate_item_tags(ServerInstance *serverInstance) {
+	std::map<std::string, std::set<std::string>> tags;
+	auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
+
+	for (const auto &pair: itemRegistry->mTagToItemsMap) {
+		std::set<std::string> items;
+		for (const auto &item: pair.second) {
+			items.insert(item->getFullItemName());
+		}
+		tags[pair.first.str] = items;
+	}
+
+	nlohmann::json json = tags;
+	std::ofstream result("mapping_files/item_tags.json");
+	result << std::setw(4) << json << std::endl;
+	result.close();
+
+	std::cout << "Generated item tags!" << std::endl;
+}
+
+static void generate_note_instruments(ServerInstance *serverInstance) {
+	std::map<std::string, unsigned int> instruments;
+	for (unsigned int i = 0; i < 256; i++) { //assume this is OK?
+		std::string name = NoteBlock::getSoundName(i);
+		if (instruments.count(name) > 0) {
+			continue;
+		}
+		instruments[name] = i;
+	}
+	nlohmann::json json = instruments;
+	std::ofstream result("mapping_files/note_block_instruments.json");
+	result << std::setw(4) << json << std::endl;
+	result.close();
+
+	std::cout << "Generated note instrument list" << std::endl;
+}
+
+static void generate_item_legacy_id_to_name_mapping(ServerInstance *serverInstance) {
     auto map = nlohmann::json::object();
 
-    for (auto& pair : ItemRegistry::mLegacyIDToNameMap) {
+    auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
+    for (auto& pair : itemRegistry->mLegacyIDToNameMap) {
         map[std::to_string(pair.first)] = add_prefix_if_necessary(pair.second.str);
     }
 
@@ -363,11 +407,12 @@ static void generate_item_legacy_id_to_name_mapping() {
     std::cout << "Generated item legacy id to name mapping table" << std::endl;
 }
 
-static void generate_item_runtime_id_to_name_mapping() {
+static void generate_item_runtime_id_to_name_mapping(ServerInstance *serverInstance) {
     auto map = nlohmann::json::object();
     auto map2 = nlohmann::json::object();
 
-    for (auto& pair : ItemRegistry::mIdToItemMap) {
+    auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
+    for (auto& pair : itemRegistry->mIdToItemMap) {
         map[std::to_string(pair.first)] = add_prefix_if_necessary(pair.second->getFullItemName());
         map2[add_prefix_if_necessary(pair.second->getFullItemName())] = pair.first;
     }
@@ -383,11 +428,12 @@ static void generate_item_runtime_id_to_name_mapping() {
     std::cout << "Generated item runtime id to name mapping table" << std::endl;
 }
 
-static void generate_item_properties_table() {
+static void generate_item_properties_table(ServerInstance *serverInstance) {
     auto table = nlohmann::json::array();
 
     unsigned int i = 0;
-    for (auto& item : ItemRegistry::mItemRegistry) {
+    auto itemRegistry = serverInstance->getMinecraft()->getLevel()->getItemRegistry().mWeakRegistry.lock();
+    for (auto& item : itemRegistry->mItemRegistry) {
         auto data = nlohmann::json::object();
 
         data["identifier"] = item->getFullItemName();
@@ -415,7 +461,7 @@ static void generate_item_properties_table() {
 
 static void generate_block_properties_table2(ServerInstance *serverInstance) {
     auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
-    unsigned int numStates = palette->getNumBlockRuntimeIds();
+    unsigned int numStates = palette->getNumBlockNetworkIds();
 
     auto table = nlohmann::json::array();
 
@@ -495,14 +541,17 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
 	generate_block_properties_table(serverInstance);
 
 	generate_old_to_current_palette_map(serverInstance);
-	generate_item_alias_mapping();
+
+	generate_item_alias_mapping(serverInstance);
+	generate_item_tags(serverInstance);
 
 	generate_block_id_to_item_id_map(serverInstance);
 	generate_command_arg_types_table(serverInstance);
+	generate_note_instruments(serverInstance);
 #endif
 
-    generate_item_legacy_id_to_name_mapping();
-    generate_item_runtime_id_to_name_mapping();
-    generate_item_properties_table();
+    generate_item_legacy_id_to_name_mapping(serverInstance);
+    generate_item_runtime_id_to_name_mapping(serverInstance);
+    generate_item_properties_table(serverInstance);
     generate_block_properties_table2(serverInstance);
 }
