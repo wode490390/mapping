@@ -2,6 +2,7 @@
 
 #include "HashedString.h"
 #include "Color.h"
+#include "BaseGameVersion.h"
 
 struct Block;
 
@@ -18,23 +19,30 @@ struct BlockLegacy {
 	std::string namespaceName;
 	HashedString fullName;
 
-	char padding[172];
+	char padding[168];
 	char unknown560_288;
 	char isWater;
     char isPumpkin;
     char notLava;
     char unused560_292;
-    char mLightBlock;
-    char mLightEmission;
+    unsigned char mLightBlock;
+    unsigned char mLightEmission;
+    /// mFlameOdds
 	int flammability;
     int mBurnOdds;
 	bool lavaFlammable;
+    /// mDestroySpeed
 	float hardness;
+    /// mExplosionResistance
 	float blastResistance;
-    Color mMapColor;
+    mce::Color mMapColor;
+    /// mFriction
 	float friction;
     int unknown560_336;
-    int id;
+    char isUnknownBlock;
+    unsigned short id;
+    BaseGameVersion mMinRequiredBaseGameVersion;
+    bool mIsVanilla;
 
 	Block *getStateFromLegacyData(unsigned short) const;
 	const NewBlockID getBlockID() const;
@@ -54,7 +62,6 @@ struct BlockLegacy {
     bool canInstatick()const;
     bool isAir()const;
     bool isEmpty()const;
-    bool isHeavy()const;
     bool isLavaFlammable()const;
     bool isMotionBlockingBlock()const;
     bool isSolid()const;
@@ -70,7 +77,8 @@ struct BlockLegacy {
     int getFlameOdds()const;
     int getRenderLayer()const;
     float getThickness()const;
+    float getExplosionResistance()const;
 
 };
 
-static_assert(offsetof(BlockLegacy, isWater) == 341);
+static_assert(offsetof(BlockLegacy, isWater) == 337);

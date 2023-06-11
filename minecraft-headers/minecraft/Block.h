@@ -2,6 +2,7 @@
 
 #include "BlockLegacy.h"
 #include "CompoundTag.h"
+#include "Material.h"
 
 typedef CompoundTag BlockSerializationId;
 
@@ -19,4 +20,6 @@ struct Block {
 
 	char filler2[144];
 	BlockSerializationId tag;
+
+    Material *getMaterial()const;
 };

@@ -484,7 +484,6 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
         data["canContainLiquid"] = blockLegacy.canContainLiquid();
         data["canHurtAndBreakItem"] = blockLegacy.canHurtAndBreakItem();
         data["canInstatick"] = blockLegacy.canInstatick();
-        data["isHeavy"] = blockLegacy.isHeavy();
         data["isLavaFlammable"] = blockLegacy.isLavaFlammable();
         data["isMotionBlockingBlock"] = blockLegacy.isMotionBlockingBlock();
         data["isSolid"] = blockLegacy.isSolid();
@@ -500,6 +499,7 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
         data["flameOdds"] = blockLegacy.getFlameOdds();
         data["renderLayer"] = blockLegacy.getRenderLayer();
         data["thickness"] = blockLegacy.getThickness();
+        data["explosionResistance"] = blockLegacy.getExplosionResistance();
 
         data["_unknown560_288"] = blockLegacy.unknown560_288;
         data["_isWater"] = blockLegacy.isWater;
@@ -509,12 +509,22 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
         data["_mBurnOdds"] = blockLegacy.mBurnOdds;
         data["_mLightBlock"] = blockLegacy.mLightBlock;
         data["_mLightEmission"] = blockLegacy.mLightEmission;
+        data["_mMapColor"] = blockLegacy.mMapColor.toHexString();
+        data["_mMapColorARGB"] = blockLegacy.mMapColor.toARGB();
         data["_mMapColor0-R"] = blockLegacy.mMapColor.r;
         data["_mMapColor1-G"] = blockLegacy.mMapColor.g;
         data["_mMapColor2-B"] = blockLegacy.mMapColor.b;
         data["_mMapColor3-A"] = blockLegacy.mMapColor.a;
         data["_unknown560_336"] = blockLegacy.unknown560_336;
+        data["_isUnknownBlock"] = blockLegacy.isUnknownBlock;
         data["_id"] = blockLegacy.id;
+        data["_mMinRequiredBaseGameVersion"] = blockLegacy.mMinRequiredBaseGameVersion.mFullVersionString;
+        data["_mIsVanilla"] = blockLegacy.mIsVanilla;
+
+        auto renderBlock = blockLegacy.getRenderBlock();
+
+        auto material = renderBlock->getMaterial();
+        data["MaterialType"] = material->mType;
 
         table[i++] = data;
         return true;
@@ -524,6 +534,35 @@ static void generate_block_properties_table2(ServerInstance *serverInstance) {
     output << std::setw(4) << table << std::endl;
     output.close();
     std::cout << "Generated block properties table II" << std::endl;
+}
+
+static void generate_block_materials(ServerInstance *serverInstance) {
+    auto table = nlohmann::json::array();
+
+    unsigned int i = 0;
+    for (auto& material : Material::mMaterials) {
+        auto data = nlohmann::json::object();
+
+        data["MaterialType"] = material->mType;
+        data["_mNeverBuildable"] = material->mNeverBuildable;
+        data["_mAlwaysDestroyable"] = material->mAlwaysDestroyable;
+        data["_mLiquid"] = material->mLiquid;
+        data["_mTranslucency"] = material->mTranslucency;
+        data["_mBlocksMotion"] = material->mBlocksMotion;
+        data["_mBlocksPrecipitation"] = material->mBlocksPrecipitation;
+        data["_mSolid"] = material->mSolid;
+        data["_mSuperHot"] = material->mSuperHot;
+        data["isSolidBlocking"] = material->isSolidBlocking();
+        data["isSuperHot"] = material->isSuperHot();
+        data["isTopSolid(false,false)"] = material->isTopSolid(false, false);
+
+        table[i++] = data;
+    }
+
+    std::ofstream output("mapping_files/block_materials_table.json");
+    output << std::setw(4) << table << std::endl;
+    output.close();
+    std::cout << "Generated block materials table" << std::endl;
 }
 
 #define GENERATE_ALL_DATA 1
@@ -554,4 +593,5 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
     generate_item_runtime_id_to_name_mapping(serverInstance);
     generate_item_properties_table(serverInstance);
     generate_block_properties_table2(serverInstance);
+    generate_block_materials(serverInstance);
 }
