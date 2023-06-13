@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -21,6 +22,10 @@ struct ItemRegistry : std::enable_shared_from_this<ItemRegistry>{
 		uint64_t aliasName;
 		char padding[120]; //BaseGameVersion crap
 	};
+	struct ComplexAlias {
+		std::function<HashedString (short)> mCallback;
+		std::vector<std::reference_wrapper<HashedString const>> mSplitNames;
+	};
 
 	std::vector<SharedPtr<Item>> mItemRegistry;
 
@@ -31,7 +36,7 @@ struct ItemRegistry : std::enable_shared_from_this<ItemRegistry>{
 	std::unordered_map<HashedString, ItemRegistry::ItemAlias> mItemAliasLookupMap;
 	std::unordered_map<unsigned long, ItemRegistry::ItemHashAlias> mReverseAliasLookupMap;
 	std::unordered_map<unsigned long, ItemRegistry::ItemHashAlias> mReverseFullNameAliasLookupMap;
-	std::unordered_map<HashedString, std::function<HashedString (short)>> mComplexAliasLookupMap;
+	std::unordered_map<HashedString, ItemRegistry::ComplexAlias> mComplexAliasLookupMap;
 	std::unordered_map<short, HashedString> mLegacyIDToNameMap;
 	short mMaxItemID;
 	std::vector<HashedString> mAttachableDefinitions;

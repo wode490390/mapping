@@ -29,6 +29,8 @@ struct BlockLegacy {
 	char padding2[16];
 	float friction;
 
+	char padding3[632];
+
 	Block *getStateFromLegacyData(unsigned short) const;
 	const NewBlockID getBlockID() const;
 

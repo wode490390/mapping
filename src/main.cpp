@@ -267,7 +267,7 @@ static void generate_item_alias_mapping(ServerInstance *serverInstance) {
 	for(auto pair : itemRegistry->mComplexAliasLookupMap) {
 		auto metaMap = nlohmann::json::object();
 
-		auto func = pair.second;
+		auto func = pair.second.mCallback;
 
 		auto zero = func(0).str;
 		for(short i = 0; i < 32767; i++){
