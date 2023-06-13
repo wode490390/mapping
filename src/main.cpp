@@ -309,6 +309,13 @@ static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 		auto descriptor = new ItemDescriptor(*state);
 
 		const Item *item = descriptor->getItem();
+		if (descriptor->getBlock() == nullptr) {
+			//Filter out blocks which save as non-blockitems, like doors, signs, etc.
+			//we should never be encoding these as blockitems
+			//TODO: this doesn't filter older stuff like minecraft:item.spruce_door, which should also be skipped
+			delete descriptor;
+			continue;
+		}
 		delete descriptor;
 		if (item == nullptr) {
 			std::cout << "null item ??? " << state->getLegacyBlock().getFullName() << std::endl;
