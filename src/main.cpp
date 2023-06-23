@@ -76,6 +76,34 @@ static std::string slurp(std::ifstream& in) {
 	return sstr.str();
 }
 
+static void generate_old_to_current_palette_map_single(BlockPalette* palette, std::filesystem::directory_entry file) {
+	std::ifstream infile(file.path());
+	auto versionName = file.path().stem().string();
+	std::ofstream mapping_file("mapping_files/old_palette_mappings/" + versionName + "_to_current_block_map.bin");
+
+	auto input = new ReadOnlyBinaryStream(slurp(infile));
+	auto output = new BinaryStream();
+
+	auto length = input->buffer.length();
+
+	while(input->offset < length){
+		CompoundTag state = input->getType<CompoundTag>();
+
+		const Block* block = palette->getBlock(state);
+
+		//TODO: compare and don't write if the states are the same
+		//right now it's easier to do this outside of the mod
+		output->writeType(state);
+		output->writeType(block->tag);
+	}
+
+	mapping_file << output->buffer;
+	mapping_file.close();
+	delete input;
+	delete output;
+
+	std::cout << "Generated mapping table for " << versionName << std::endl;
+}
 static void generate_old_to_current_palette_map(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
 
@@ -93,32 +121,7 @@ static void generate_old_to_current_palette_map(ServerInstance *serverInstance) 
 		if (file.path().extension().string() != ".nbt") {
 			continue;
 		}
-		std::ifstream infile(file.path());
-		auto versionName = file.path().stem().string();
-		std::ofstream mapping_file("mapping_files/old_palette_mappings/" + versionName + "_to_current_block_map.bin");
-
-		auto input = new ReadOnlyBinaryStream(slurp(infile));
-		auto output = new BinaryStream();
-
-		auto length = input->buffer.length();
-
-		while(input->offset < length){
-			CompoundTag state = input->getType<CompoundTag>();
-
-			const Block* block = palette->getBlock(state);
-
-			//TODO: compare and don't write if the states are the same
-			//right now it's easier to do this outside of the mod
-			output->writeType(state);
-			output->writeType(block->tag);
-		}
-
-		mapping_file << output->buffer;
-		mapping_file.close();
-		delete input;
-		delete output;
-
-		std::cout << "Generated mapping table for " << versionName << std::endl;
+		generate_old_to_current_palette_map_single(palette, file);
 		generated++;
 	}
 
