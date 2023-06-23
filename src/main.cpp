@@ -2,6 +2,7 @@
 #include <minecraft/Block.h>
 #include <minecraft/BlockLegacy.h>
 #include <minecraft/BlockPalette.h>
+#include <minecraft/BlockSerializationUtils.h>
 #include <minecraft/BlockTypeRegistry.h>
 #include <minecraft/CompoundTag.h>
 #include <minecraft/Item.h>
@@ -86,6 +87,7 @@ static void generate_old_to_current_palette_map_single(BlockPalette* palette, st
 
 	auto length = input->buffer.length();
 
+	BlockSerializationUtils::clearNBTToBlockCache();
 	while(input->offset < length){
 		CompoundTag state = input->getType<CompoundTag>();
 
