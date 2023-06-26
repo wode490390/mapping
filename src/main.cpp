@@ -14,6 +14,7 @@
 #include <minecraft/Minecraft.h>
 #include <minecraft/NoteBlock.h>
 #include <minecraft/ParticleTypeMap.h>
+#include <minecraft/PrintStream.h>
 #include <minecraft/ServerInstance.h>
 #include <minecraft/VanillaBlockConversion.h>
 #include <minecraft/Biome.h>
@@ -26,6 +27,15 @@
 #include <set>
 #include <json.hpp>
 
+struct FilePrintStream : public PrintStream {
+
+	std::ofstream &mOutput;
+
+	FilePrintStream(std::ofstream &output) : mOutput(output) {}
+	virtual void print(std::string const& string) const {
+		mOutput << string;
+	}
+};
 
 void generate_r12_to_current_block_map(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
