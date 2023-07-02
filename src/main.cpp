@@ -1,10 +1,12 @@
 #include <minecraft/BinaryStream.h>
 #include <minecraft/Block.h>
+#include <minecraft/BlockActor.h>
 #include <minecraft/BlockLegacy.h>
 #include <minecraft/BlockPalette.h>
 #include <minecraft/BlockSerializationUtils.h>
 #include <minecraft/BlockTypeRegistry.h>
 #include <minecraft/CompoundTag.h>
+#include <minecraft/Enchant.h>
 #include <minecraft/Item.h>
 #include <minecraft/ItemDescriptor.h>
 #include <minecraft/ItemRegistry.h>
@@ -655,6 +657,48 @@ static void generate_potions(ServerInstance *serverInstance) {
     std::cout << "Generated potion list" << std::endl;
 }
 
+static void generate_enchants(ServerInstance *serverInstance) {
+    auto table = nlohmann::json::array();
+
+    unsigned int i = 0;
+    for (auto& enchant : Enchant::mEnchants) {
+        auto data = nlohmann::json::object();
+
+        data["Type"] = enchant->mEnchantType;
+        data["Frequency"] = enchant->mFrequency;
+        data["mIsLootable"] = enchant->mIsLootable;
+        data["mPrimarySlots"] = enchant->mPrimarySlots;
+        data["mSecondarySlots"] = enchant->mSecondarySlots;
+        data["mCompatibility"] = enchant->mCompatibility;
+        data["mDescription"] = enchant->mDescription;
+        data["mStringId"] = enchant->mStringId.str;
+        data["mIsDisabled"] = enchant->mIsDisabled;
+        data["isDisabled"] = enchant->isDisabled();
+        data["isAvailable"] = enchant->isAvailable();
+
+        table[i++] = data;
+    }
+
+    std::ofstream output("mapping_files/enchants.json");
+    output << std::setw(4) << table << std::endl;
+    output.close();
+    std::cout << "Generated enchant list" << std::endl;
+}
+
+static void generate_block_actor_id_map(ServerInstance *serverInstance) {
+    auto map = nlohmann::json::object();
+
+    for (auto& pair : BlockActor::mClassIdMap) {
+        map[std::to_string(pair.first)] = pair.second;
+    }
+
+    std::ofstream result("mapping_files/block_actor_id_map.json");
+    result << std::setw(4) << map << std::endl;
+    result.close();
+
+    std::cout << "Generated block actor id table" << std::endl;
+}
+
 #define GENERATE_ALL_DATA 1
 
 extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
@@ -686,4 +730,6 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
     generate_block_materials(serverInstance);
     generate_mob_effects(serverInstance);
     generate_potions(serverInstance);
+    generate_enchants(serverInstance);
+    generate_block_actor_id_map(serverInstance);
 }
