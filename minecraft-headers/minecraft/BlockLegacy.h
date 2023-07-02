@@ -44,6 +44,8 @@ struct BlockLegacy {
     BaseGameVersion mMinRequiredBaseGameVersion;
     bool mIsVanilla;
 
+	char padding3[632];
+
 	Block *getStateFromLegacyData(unsigned short) const;
 	const NewBlockID getBlockID() const;
 

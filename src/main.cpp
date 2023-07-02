@@ -2,6 +2,7 @@
 #include <minecraft/Block.h>
 #include <minecraft/BlockLegacy.h>
 #include <minecraft/BlockPalette.h>
+#include <minecraft/BlockSerializationUtils.h>
 #include <minecraft/BlockTypeRegistry.h>
 #include <minecraft/CompoundTag.h>
 #include <minecraft/Item.h>
@@ -13,6 +14,7 @@
 #include <minecraft/Minecraft.h>
 #include <minecraft/NoteBlock.h>
 #include <minecraft/ParticleTypeMap.h>
+#include <minecraft/PrintStream.h>
 #include <minecraft/ServerInstance.h>
 #include <minecraft/VanillaBlockConversion.h>
 #include <minecraft/Biome.h>
@@ -25,6 +27,15 @@
 #include <set>
 #include <json.hpp>
 
+struct FilePrintStream : public PrintStream {
+
+	std::ofstream &mOutput;
+
+	FilePrintStream(std::ofstream &output) : mOutput(output) {}
+	virtual void print(std::string const& string) const {
+		mOutput << string;
+	}
+};
 
 void generate_r12_to_current_block_map(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
@@ -76,6 +87,35 @@ static std::string slurp(std::ifstream& in) {
 	return sstr.str();
 }
 
+static void generate_old_to_current_palette_map_single(BlockPalette* palette, std::filesystem::directory_entry file) {
+	std::ifstream infile(file.path());
+	auto versionName = file.path().stem().string();
+	std::ofstream mapping_file("mapping_files/old_palette_mappings/" + versionName + "_to_current_block_map.bin");
+
+	auto input = new ReadOnlyBinaryStream(slurp(infile));
+	auto output = new BinaryStream();
+
+	auto length = input->buffer.length();
+
+	BlockSerializationUtils::clearNBTToBlockCache();
+	while(input->offset < length){
+		CompoundTag state = input->getType<CompoundTag>();
+
+		const Block* block = palette->getBlock(state);
+
+		//TODO: compare and don't write if the states are the same
+		//right now it's easier to do this outside of the mod
+		output->writeType(state);
+		output->writeType(block->tag);
+	}
+
+	mapping_file << output->buffer;
+	mapping_file.close();
+	delete input;
+	delete output;
+
+	std::cout << "Generated mapping table for " << versionName << std::endl;
+}
 static void generate_old_to_current_palette_map(ServerInstance *serverInstance) {
 	auto palette = serverInstance->getMinecraft()->getLevel()->getBlockPalette();
 
@@ -93,32 +133,7 @@ static void generate_old_to_current_palette_map(ServerInstance *serverInstance) 
 		if (file.path().extension().string() != ".nbt") {
 			continue;
 		}
-		std::ifstream infile(file.path());
-		auto versionName = file.path().stem().string();
-		std::ofstream mapping_file("mapping_files/old_palette_mappings/" + versionName + "_to_current_block_map.bin");
-
-		auto input = new ReadOnlyBinaryStream(slurp(infile));
-		auto output = new BinaryStream();
-
-		auto length = input->buffer.length();
-
-		while(input->offset < length){
-			CompoundTag state = input->getType<CompoundTag>();
-
-			const Block* block = palette->getBlock(state);
-
-			//TODO: compare and don't write if the states are the same
-			//right now it's easier to do this outside of the mod
-			output->writeType(state);
-			output->writeType(block->tag);
-		}
-
-		mapping_file << output->buffer;
-		mapping_file.close();
-		delete input;
-		delete output;
-
-		std::cout << "Generated mapping table for " << versionName << std::endl;
+		generate_old_to_current_palette_map_single(palette, file);
 		generated++;
 	}
 
@@ -267,7 +282,7 @@ static void generate_item_alias_mapping(ServerInstance *serverInstance) {
 	for(auto pair : itemRegistry->mComplexAliasLookupMap) {
 		auto metaMap = nlohmann::json::object();
 
-		auto func = pair.second;
+		auto func = pair.second.mCallback;
 
 		auto zero = func(0).str;
 		for(short i = 0; i < 32767; i++){
@@ -309,6 +324,13 @@ static void generate_block_id_to_item_id_map(ServerInstance *serverInstance) {
 		auto descriptor = new ItemDescriptor(*state);
 
 		const Item *item = descriptor->getItem();
+		if (descriptor->getBlock() == nullptr) {
+			//Filter out blocks which save as non-blockitems, like doors, signs, etc.
+			//we should never be encoding these as blockitems
+			//TODO: this doesn't filter older stuff like minecraft:item.spruce_door, which should also be skipped
+			delete descriptor;
+			continue;
+		}
 		delete descriptor;
 		if (item == nullptr) {
 			std::cout << "null item ??? " << state->getLegacyBlock().getFullName() << std::endl;
