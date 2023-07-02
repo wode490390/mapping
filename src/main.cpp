@@ -12,8 +12,10 @@
 #include <minecraft/LevelSoundEventMap.h>
 #include <minecraft/Memory.h>
 #include <minecraft/Minecraft.h>
+#include <minecraft/MobEffect.h>
 #include <minecraft/NoteBlock.h>
 #include <minecraft/ParticleTypeMap.h>
+#include <minecraft/Potion.h>
 #include <minecraft/PrintStream.h>
 #include <minecraft/ServerInstance.h>
 #include <minecraft/VanillaBlockConversion.h>
@@ -587,6 +589,72 @@ static void generate_block_materials(ServerInstance *serverInstance) {
     std::cout << "Generated block materials table" << std::endl;
 }
 
+static void generate_mob_effects(ServerInstance *serverInstance) {
+    auto list = nlohmann::json::array();
+
+    for (unsigned int id = 0; id < 128; id++) { //assume this is OK?
+        auto effect = MobEffect::getById(id);
+        if (effect == nullptr) {
+            continue;
+        }
+
+        auto data = nlohmann::json::object();
+        data["mId"] = effect->mId;
+        data["mIsHarmful"] = effect->mIsHarmful;
+        data["mColor"] = effect->mColor.toHexString();
+        data["mColorARGB"] = effect->mColor.toARGB();
+        data["mColor0-R"] = effect->mColor.r;
+        data["mColor1-G"] = effect->mColor.g;
+        data["mColor2-B"] = effect->mColor.b;
+        data["mColor3-A"] = effect->mColor.a;
+        data["mDescriptionId"] = effect->mDescriptionId;
+        data["mIcon"] = effect->mIcon;
+        data["mDurationModifier"] = effect->mDurationModifier;
+        data["mIsDisabled"] = effect->mIsDisabled;
+        data["mResourceName"] = effect->mResourceName;
+        data["mIconName"] = effect->mIconName;
+        data["mEffectVisible"] = effect->mEffectVisible;
+        data["mComponentName"] = effect->mComponentName.str;
+        list[id] = data;
+    }
+
+    std::ofstream output("mapping_files/mob_effects.json");
+    output << std::setw(4) << list << std::endl;
+    output.close();
+    std::cout << "Generated mob effect list" << std::endl;
+}
+
+static void generate_potions(ServerInstance *serverInstance) {
+    auto list = nlohmann::json::array();
+
+    unsigned int count = Potion::getPotionCount();
+    for (int id = 0; id < count; id++) {
+        auto potion = Potion::getPotion(id);
+
+        auto data = nlohmann::json::object();
+        data["mId"] = potion->mId;
+        data["mNameId"] = potion->mNameId;
+        data["mPrefix"] = potion->mPrefix;
+        data["mVar"] = potion->mVar;
+        data["descriptionId"] = potion->getDescriptionId();
+        data["mobEffectId"] = potion->getMobEffectId();
+
+        auto descriptionIds = nlohmann::json::array();
+        unsigned int k = 0;
+        for (auto &descriptionId: potion->mDescriptionIds) {
+            descriptionIds[k++] = descriptionId;
+        }
+        data["mDescriptionIds"] = descriptionIds;
+
+        list[id] = data;
+    }
+
+    std::ofstream output("mapping_files/potions.json");
+    output << std::setw(4) << list << std::endl;
+    output.close();
+    std::cout << "Generated potion list" << std::endl;
+}
+
 #define GENERATE_ALL_DATA 1
 
 extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
@@ -616,4 +684,6 @@ extern "C" void modloader_on_server_start(ServerInstance *serverInstance) {
     generate_item_properties_table(serverInstance);
     generate_block_properties_table2(serverInstance);
     generate_block_materials(serverInstance);
+    generate_mob_effects(serverInstance);
+    generate_potions(serverInstance);
 }
